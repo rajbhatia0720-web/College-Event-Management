@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07111f">
+  <title>CampusLoop | College Event Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+  <main id="auth-screen" class="auth-screen">
+    <div class="auth-orbit orbit-one"></div>
+    <div class="auth-orbit orbit-two"></div>
+    <section class="auth-visual">
+      <div class="brand-lockup">
+        <span class="brand-mark">↗</span>
+        <span>CampusLoop</span>
+      </div>
+      <div class="auth-hero-copy">
+        <p class="eyebrow">THE CAMPUS, IN MOTION</p>
+        <h1>Find your next<br><em>big moment.</em></h1>
+        <p>One place for every club, workshop, competition and community gathering on campus.</p>
+      </div>
+      <div class="auth-proof">
+        <div class="proof-avatars"><span>AK</span><span>RM</span><span>DS</span><span>+2k</span></div>
+        <p><strong>2,400+ students</strong><br>are already in the loop</p>
+      </div>
+    </section>
+    <section class="auth-panel">
+      <div class="mobile-brand brand-lockup"><span class="brand-mark">↗</span><span>CampusLoop</span></div>
+      <div class="auth-panel-inner">
+        <div class="panel-heading">
+          <p class="eyebrow">WELCOME BACK</p>
+          <h2>Sign in to your<br>campus space.</h2>
+          <p>Choose your access to continue.</p>
+        </div>
+        <div class="role-toggle" role="tablist" aria-label="Choose account type">
+          <button class="role-tab active" data-role="student" role="tab" aria-selected="true"><span>◉</span> Student</button>
+          <button class="role-tab" data-role="admin" role="tab" aria-selected="false"><span>▣</span> Admin</button>
+        </div>
+        <form id="login-form">
+          <label for="email">College email</label>
+          <div class="input-wrap"><span>@</span><input id="email" type="email" value="student@college.edu" required autocomplete="email"></div>
+          <label for="password">Password</label>
+          <div class="input-wrap"><span>••</span><input id="password" type="password" value="campus123" required autocomplete="current-password"><button type="button" id="password-toggle" class="input-action" aria-label="Show password">◉</button></div>
+          <div class="form-meta"><label class="check-label"><input type="checkbox" checked> <span>Remember me</span></label><a href="#" id="forgot-link">Forgot password?</a></div>
+          <button class="primary-button full-width" type="submit"><span id="login-label">Enter student space</span><span>→</span></button>
+        </form>
+        <p class="demo-hint" id="demo-hint">Demo: student@college.edu / campus123</p>
+        <div class="auth-footer">New to CampusLoop? <a href="#" id="signup-link">Create a student account</a></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="app-screen" class="app-screen hidden">
+    <aside class="sidebar">
+      <div class="brand-lockup app-brand"><span class="brand-mark">↗</span><span>CampusLoop</span></div>
+      <div class="workspace-chip"><span class="status-dot"></span><div><strong id="workspace-role">Student space</strong><small id="workspace-email">student@college.edu</small></div><span class="chevron">⌄</span></div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <p class="nav-label">Workspace</p>
+        <button class="nav-item active" data-view="overview"><span>⊞</span> Overview</button>
+        <button class="nav-item" data-view="events"><span>◈</span> Explore events <b class="nav-count">11</b></button>
+        <button class="nav-item" data-view="calendar"><span>▦</span> Event calendar</button>
+        <button class="nav-item" data-view="tickets"><span>▣</span> My tickets <b id="ticket-count" class="nav-count">0</b></button>
+        <button class="nav-item admin-only" data-view="registrations"><span>⌁</span> Registrations</button>
+        <button class="nav-item admin-only" data-view="students"><span>♙</span> Students</button>
+        <button class="nav-item admin-only" data-view="attendance"><span>✓</span> Attendance</button>
+        <button class="nav-item admin-only" data-view="participants"><span>◒</span> Participants</button>
+        <p class="nav-label nav-label-spaced">Manage</p>
+        <button class="nav-item admin-only" data-view="manage"><span>＋</span> Create event</button>
+        <button class="nav-item" data-view="help"><span>?</span> Help center</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="mini-profile"><span class="profile-avatar" id="profile-avatar">AS</span><div><strong id="profile-name">Aarav Shah</strong><small id="profile-role">Student</small></div><button id="logout-button" aria-label="Log out">↪</button></div>
+      </div>
+    </aside>
+
+    <section class="content-area">
+      <header class="topbar"><button class="mobile-menu" id="mobile-menu" aria-label="Open navigation">☰</button><div class="breadcrumbs">CampusLoop <span>/</span> <strong id="page-breadcrumb">Overview</strong></div><div class="top-actions"><button class="icon-button" id="notification-button" aria-label="Notifications">♧<i></i></button><button class="outline-button" id="top-create-button"><span>＋</span> <span id="top-create-label">Create event</span></button></div></header>
+      <div class="page-content">
+        <section id="view-overview" class="app-view">
+          <div class="welcome-row"><div><p class="eyebrow">MONDAY, 21 SEPTEMBER 2026</p><h1 id="welcome-title">Good evening, Aarav <span>✦</span></h1><p id="welcome-subtitle">The best campus moments are waiting for you.</p></div><button class="primary-button" id="hero-action"><span>Browse events</span><span>↗</span></button></div>
+          <div class="stat-grid student-stats"><article class="stat-card accent-coral"><div class="stat-icon">◈</div><p>Upcoming events</p><strong>06</strong><span class="stat-note positive">↑ 2 this week</span></article><article class="stat-card accent-teal"><div class="stat-icon">▣</div><p>Tickets claimed</p><strong id="stat-tickets">00</strong><span class="stat-note">Across 4 events</span></article><article class="stat-card accent-yellow"><div class="stat-icon">✦</div><p>Community points</p><strong>240</strong><span class="stat-note positive">↑ 18 this month</span></article><article class="stat-card accent-blue"><div class="stat-icon">◌</div><p>Hours on campus</p><strong>12.5</strong><span class="stat-note">This semester</span></article></div>
+          <div class="section-heading"><div><p class="eyebrow">DON'T MISS OUT</p><h2>Happening soon</h2></div><button class="text-button" data-view-target="events">View all events <span>→</span></button></div>
+          <div class="feature-grid"><article class="feature-event featured-event"><div class="event-art art-tech"><span class="art-shape shape-a"></span><span class="art-shape shape-b"></span><span class="art-label">TECHXTER<br><b>2026</b></span></div><div class="feature-info"><div class="event-meta"><span class="category-pill technical">TECHNICAL</span><span>30 SEP · 09:00</span></div><h3>Techxter 2026</h3><p>Build. Break. Rebuild. The campus hackathon for ideas that refuse to stay small.</p><div class="event-footer"><span>◉ Main Auditorium</span><button class="small-button issue-ticket" data-event="Techxter 2026">Get a ticket <span>→</span></button></div></div></article><article class="feature-event"><div class="event-art art-culture"><span class="art-label">RANG<br><b>FEST</b></span></div><div class="feature-info"><div class="event-meta"><span class="category-pill cultural">CULTURAL</span><span>04 OCT · 18:30</span></div><h3>Rang — open mic night</h3><p>Music, poetry and stories from the voices that make our campus.</p><div class="event-footer"><span>◉ Amphitheatre</span><button class="small-button issue-ticket" data-event="Rang — open mic night">Get a ticket <span>→</span></button></div></div></article></div>
+          <div class="lower-grid"><section><div class="section-heading compact"><div><p class="eyebrow">YOUR CALENDAR</p><h2>Upcoming for you</h2></div><button class="text-button" data-view-target="tickets">Your tickets <span>→</span></button></div><div id="upcoming-list" class="upcoming-list"></div></section><aside class="quote-card"><span class="quote-mark">“</span><p>College is not just a place you go to. It’s a place you become someone new.</p><small>— CampusLoop community</small><div class="quote-line"></div></aside></div>
+        </section>
+
+        <section id="view-events" class="app-view hidden"><div class="view-header"><div><p class="eyebrow">THE CAMPUS CALENDAR</p><h1>Explore events</h1><p>Find something worth showing up for.</p></div><div class="search-box"><span>⌕</span><input id="event-search" placeholder="Search events..." type="search"></div></div><div class="filter-row"><button class="filter active" data-filter="all">All events <span>11</span></button><button class="filter" data-filter="Technical">Technical</button><button class="filter" data-filter="Cultural">Cultural</button><button class="filter" data-filter="Social">Social</button><button class="filter" data-filter="Sports">Sports</button></div><div id="events-grid" class="events-grid"></div></section>
+
+        <section id="view-calendar" class="app-view hidden"><div class="view-header"><div><p class="eyebrow">PLAN YOUR CAMPUS WEEK</p><h1>Event calendar</h1><p>See what is happening and jump straight into a ticket.</p></div><div class="calendar-controls"><button class="outline-button" id="calendar-prev">←</button><strong id="calendar-month">September 2026</strong><button class="outline-button" id="calendar-next">→</button></div></div><div id="calendar-grid" class="calendar-grid"></div></section>
+
+        <section id="view-tickets" class="app-view hidden"><div class="view-header"><div><p class="eyebrow">YOUR PASS, ALWAYS READY</p><h1>My tickets</h1><p>Everything you’ve claimed, in one place.</p></div><button class="primary-button" data-view-target="events">Find an event <span>→</span></button></div><div id="tickets-empty" class="empty-state"><div>▣</div><h2>No tickets yet</h2><p>Find an event you love and claim your first campus pass.</p><button class="primary-button" data-view-target="events">Explore events <span>→</span></button></div><div id="tickets-list" class="tickets-list hidden"></div></section>
+
+        <section id="view-registrations" class="app-view hidden admin-view"><div class="view-header"><div><p class="eyebrow">OPERATIONS</p><h1>Registration desk</h1><p>Track who is showing up across every event.</p></div><button class="outline-button">Download CSV ↓</button></div><div class="admin-table-wrap"><table><thead><tr><th>Student</th><th>Event</th><th>Ticket ID</th><th>Status</th></tr></thead><tbody id="registrations-body"></tbody></table></div></section>
+        <section id="view-students" class="app-view hidden admin-view"><div class="view-header"><div><p class="eyebrow">CAMPUS DIRECTORY</p><h1>Students</h1><p>Add, update or remove student records.</p></div><button class="primary-button" id="add-student-button">＋ Add student</button></div><div class="admin-table-wrap"><table><thead><tr><th>Student</th><th>Student ID</th><th>Department</th><th>Email</th><th>Actions</th></tr></thead><tbody id="students-body"></tbody></table></div></section>
+        <section id="view-attendance" class="app-view hidden admin-view"><div class="view-header"><div><p class="eyebrow">CHECK-IN CONTROL</p><h1>Attendance desk</h1><p>Mark arrivals quickly at the door and keep each event accurate.</p></div><div class="attendance-summary"><strong id="attendance-total">0 / 0</strong><small>checked in</small></div></div><div class="attendance-toolbar"><label for="attendance-event">Event</label><select id="attendance-event"></select><div class="search-box"><span>⌕</span><input id="attendance-search" placeholder="Find a participant..." type="search"></div></div><div class="admin-table-wrap"><table><thead><tr><th>Participant</th><th>Student ID</th><th>Ticket</th><th>Attendance</th><th>Action</th></tr></thead><tbody id="attendance-body"></tbody></table></div></section>
+        <section id="view-participants" class="app-view hidden admin-view"><div class="view-header"><div><p class="eyebrow">PARTICIPATION INSIGHTS</p><h1>Participant dashboard</h1><p>Understand registrations and turnout across your campus events.</p></div><select id="participant-event-filter" class="dashboard-select"><option value="all">All events</option></select></div><div class="participant-stats"><article class="stat-card accent-coral"><p>Total participants</p><strong id="participant-total">0</strong><span class="stat-note">Registered seats</span></article><article class="stat-card accent-teal"><p>Checked in</p><strong id="participant-checked">0</strong><span class="stat-note positive" id="participant-rate">0% turnout</span></article><article class="stat-card accent-yellow"><p>Events with signups</p><strong id="participant-events">0</strong><span class="stat-note">Across campus</span></article><article class="stat-card accent-blue"><p>Average attendance</p><strong id="participant-average">0%</strong><span class="stat-note">Per event</span></article></div><div class="participant-grid"><section class="insight-panel"><div class="section-heading compact"><div><p class="eyebrow">EVENT BREAKDOWN</p><h2>Registrations by event</h2></div></div><div id="participant-bars" class="participant-bars"></div></section><section class="insight-panel"><div class="section-heading compact"><div><p class="eyebrow">QUICK VIEW</p><h2>Who is participating</h2></div></div><div id="participant-list" class="participant-list"></div></section></div></section>
+        <section id="view-manage" class="app-view hidden admin-view"><div class="view-header"><div><p class="eyebrow">ADMIN TOOLS</p><h1>Create an event</h1><p>Give your campus something to look forward to.</p></div></div><form id="create-event-form" class="create-form"><div class="field-grid"><div><label for="new-event-name">Event name</label><input id="new-event-name" placeholder="e.g. Design Jam" required></div><div><label for="new-event-category">Category</label><select id="new-event-category"><option>Technical</option><option>Cultural</option><option>Social</option><option>Sports</option></select></div><div><label for="new-event-date">Date and time</label><input id="new-event-date" type="datetime-local" required></div><div><label for="new-event-location">Location</label><input id="new-event-location" placeholder="Main Auditorium" required></div><div><label for="new-event-organizer">Organizer</label><input id="new-event-organizer" placeholder="Student Council" required></div><div><label for="new-event-capacity">Capacity</label><input id="new-event-capacity" type="number" min="1" placeholder="100" required></div></div><label for="new-event-description">Description</label><textarea id="new-event-description" rows="4" placeholder="What should students know?"></textarea><button class="primary-button" type="submit">Publish event <span>→</span></button></form></section>
+        <section id="view-help" class="app-view hidden"><div class="help-panel"><p class="eyebrow">NEED A HAND?</p><h1>How can we help?</h1><p>Tickets, event listings and campus access should feel simple. Browse the quick answers below.</p><div class="faq-grid"><button><strong>How do I claim a ticket?</strong><span>+</span></button><button><strong>Can I cancel a registration?</strong><span>+</span></button><button><strong>Where is my QR code?</strong><span>+</span></button><button><strong>Contact the event team</strong><span>+</span></button></div></div></section>
+      </div>
+    </section>
+  </div>
+
+  <div id="ticket-modal" class="modal-backdrop hidden"><div class="modal ticket-modal"><button class="modal-close" data-close-modal aria-label="Close">×</button><div class="ticket-modal-header"><span class="modal-icon">▣</span><p class="eyebrow">RESERVE YOUR SPOT</p><h2>Issue event ticket</h2><p id="modal-event-caption">You’re one step away from joining the room.</p></div><form id="ticket-form"><input type="hidden" id="ticket-event-name"><div class="field-grid"><div><label for="ticket-name">Full name</label><input id="ticket-name" required value="Aarav Shah"></div><div><label for="ticket-student-id">Student ID</label><input id="ticket-student-id" required placeholder="23CS001"></div></div><label for="ticket-email">College email</label><input id="ticket-email" type="email" required value="student@college.edu"><label class="check-label ticket-check"><input type="checkbox" required> <span>I agree to the event code of conduct.</span></label><button class="primary-button full-width" type="submit">Issue my ticket <span>→</span></button></form></div></div>
+  <div id="details-modal" class="modal-backdrop hidden"><div class="modal details-modal"><button class="modal-close" data-close-modal aria-label="Close">×</button><div id="details-art" class="details-art"><span id="details-category" class="category-pill technical">TECHNICAL</span></div><div class="details-content"><div class="event-meta"><span id="details-date">30 SEP · 09:00</span><span id="details-location">◉ Main Auditorium</span></div><h2 id="details-title">Event details</h2><p id="details-description"></p><div class="details-facts"><div><small>ORGANIZED BY</small><strong id="details-organizer"></strong></div><div><small>CAPACITY</small><strong id="details-capacity"></strong></div><div><small>ENTRY</small><strong id="details-fee"></strong></div><div><small>GOOD TO KNOW</small><strong id="details-requirement"></strong></div></div><button id="details-ticket-button" class="primary-button full-width">Get my ticket <span>→</span></button></div></div></div>
+  <div id="success-modal" class="modal-backdrop hidden"><div class="modal success-modal"><button class="modal-close" data-close-modal aria-label="Close">×</button><div class="success-icon">✓</div><p class="eyebrow">YOU’RE ON THE LIST</p><h2>Ticket issued.</h2><p>Your pass for <strong id="success-event"></strong> is ready. Keep this code handy at the door.</p><div class="ticket-code"><small>TICKET ID</small><strong id="success-code">CEH-000-00000</strong><span>Confirmed registration</span></div><button class="primary-button full-width" data-close-modal data-view-target="tickets">View my tickets <span>→</span></button></div></div>
+  <div id="student-modal" class="modal-backdrop hidden"><div class="modal"><button class="modal-close" data-close-modal aria-label="Close">×</button><div class="ticket-modal-header"><span class="modal-icon">♙</span><p class="eyebrow">DIRECTORY RECORD</p><h2>Add student</h2><p>Create a student profile for event registrations.</p></div><form id="student-form"><div class="field-grid"><div><label for="student-name">Full name</label><input id="student-name" required placeholder="Priya Mehta"></div><div><label for="student-id">Student ID</label><input id="student-id" required placeholder="24CS042"></div></div><div class="field-grid"><div><label for="student-department">Department</label><input id="student-department" required placeholder="Computer Science"></div><div><label for="student-email">College email</label><input id="student-email" required type="email" placeholder="priya@college.edu"></div></div><button class="primary-button full-width" type="submit">Add student <span>→</span></button></form></div></div>
+  <button id="chatbot-toggle" class="chatbot-toggle" aria-label="Open CampusLoop assistant">✦</button><section id="chatbot" class="chatbot hidden" aria-label="CampusLoop assistant"><div class="chatbot-head"><div><strong>CampusLoop assistant</strong><small>Usually replies instantly</small></div><button id="chatbot-close" aria-label="Close assistant">×</button></div><div id="chat-messages" class="chat-messages"><div class="chat-bubble bot">Hi! I can help with tickets, event dates, student records and admin tools.</div></div><form id="chat-form" class="chat-form"><input id="chat-input" placeholder="Ask about events..." autocomplete="off"><button aria-label="Send message">↑</button></form></section>
+  <script src="app.js"></script>
+</body>
+</html>

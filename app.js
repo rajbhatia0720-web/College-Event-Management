@@ -9,7 +9,11 @@ const events = [
   { name: 'Freshers Garba Night', category: 'Cultural', date: '28 OCT', time: '19:00', location: 'Central Courtyard', description: 'Bring your brightest colors for a night of music, movement and new friends.', art: 'art-culture', capacity: 400, organizer: 'Student Council', fee: '₹80', requirement: 'Traditional wear encouraged' }
 ];
 
-const state = { role: 'student', currentView: 'overview', calendarMonth: 8, calendarYear: 2026, tickets: JSON.parse(localStorage.getItem('campusloop-tickets') || '[]'), students: JSON.parse(localStorage.getItem('campusloop-students') || '[]'), attendance: JSON.parse(localStorage.getItem('campusloop-attendance') || '{}'), reminders: JSON.parse(localStorage.getItem('campusloop-reminders') || '{}') };
+const starterVideos = [
+  { title: 'Techxter 2026: build what matters', event: 'Techxter 2026', category: 'Highlight', url: 'https://www.youtube.com/watch?v=ysz5S6PUM-U', description: 'A quick look at the ideas, energy and teams behind our flagship hackathon.' },
+  { title: 'Rang open mic: voices of campus', event: 'Rang — open mic night', category: 'Preview', url: 'https://www.youtube.com/watch?v=ScMzIvxBSi4', description: 'Meet the performers bringing an evening of music, poetry and stories to life.' }
+];
+const state = { role: 'student', currentView: 'overview', calendarMonth: 8, calendarYear: 2026, tickets: JSON.parse(localStorage.getItem('campusloop-tickets') || '[]'), students: JSON.parse(localStorage.getItem('campusloop-students') || '[]'), attendance: JSON.parse(localStorage.getItem('campusloop-attendance') || '{}'), reminders: JSON.parse(localStorage.getItem('campusloop-reminders') || '{}'), videos: JSON.parse(localStorage.getItem('campusloop-videos') || 'null') || starterVideos };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -56,6 +60,7 @@ function login(event) {
   if (isAdmin) { renderAdminDashboard(); renderAttendance(); renderParticipants(); }
   renderTickets();
   renderUpcoming();
+  renderVideos();
   showToast(`Signed in to your ${isAdmin ? 'admin' : 'student'} space`);
 }
 
@@ -73,6 +78,42 @@ function renderEvents(filter = 'all', search = '') {
   $$('.issue-ticket').forEach((button) => button.addEventListener('click', () => openTicketModal(button.dataset.event)));
   $$('.view-details').forEach((button) => button.addEventListener('click', () => openDetailsModal(button.dataset.event)));
   $$('.delete-event').forEach((button) => button.addEventListener('click', () => deleteEvent(button.dataset.event)));
+}
+
+function videoEmbedUrl(url) {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/i);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : '';
+}
+
+function renderVideoCard(video, isAdmin = false) {
+  const relatedEvent = events.find((event) => event.name === video.event);
+  const embedUrl = videoEmbedUrl(video.url);
+  const preview = embedUrl ? `<iframe src="${embedUrl}" title="${video.title}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>` : `<div class="video-fallback"><span>▶</span><small>Watch video</small></div>`;
+  return `<article class="video-card"><div class="video-preview">${preview}</div><div class="video-card-content"><div class="video-card-meta"><span class="category-pill technical">${video.category.toUpperCase()}</span><span>${relatedEvent ? relatedEvent.date : 'CAMPUS'}</span></div><h3>${video.title}</h3><p>${video.description || 'A new CampusLoop video connected to this event.'}</p><div class="video-card-footer"><span>◈ ${video.event}</span><span class="video-actions"><a href="${video.url}" target="_blank" rel="noreferrer">Open ↗</a>${isAdmin ? `<button class="small-button danger-button delete-video" data-video="${video.title}">Delete</button>` : ''}</span></div></div></article>`;
+}
+
+function renderVideos(filter = 'all', search = '') {
+  const filtered = state.videos.filter((video) => (filter === 'all' || (events.find((event) => event.name === video.event)?.category === filter)) && `${video.title} ${video.event} ${video.description}`.toLowerCase().includes(search.toLowerCase()));
+  $('#videos-grid').innerHTML = filtered.length ? filtered.map((video) => renderVideoCard(video)).join('') : '<div class="empty-state"><div>▶</div><h2>No videos yet</h2><p>New event stories will appear here as they are published.</p></div>';
+  $$('.delete-video').forEach((button) => button.addEventListener('click', () => deleteVideo(button.dataset.video)));
+}
+
+function renderAdminVideos() {
+  $('#admin-videos-grid').innerHTML = state.videos.length ? state.videos.map((video) => renderVideoCard(video, true)).join('') : '<div class="empty-state"><div>▶</div><h2>Your media library is empty</h2><p>Publish the first video for a campus event.</p></div>';
+  $$('#admin-videos-grid .delete-video').forEach((button) => button.addEventListener('click', () => deleteVideo(button.dataset.video)));
+}
+
+function populateVideoEvents() {
+  $('#new-video-event').innerHTML = events.map((event) => `<option value="${event.name}">${event.name}</option>`).join('');
+}
+
+function deleteVideo(title) {
+  if (!window.confirm(`Delete ${title}?`)) return;
+  state.videos = state.videos.filter((video) => video.title !== title);
+  localStorage.setItem('campusloop-videos', JSON.stringify(state.videos));
+  renderVideos();
+  renderAdminVideos();
+  showToast('Video removed from the media library');
 }
 
 function openDetailsModal(eventName) {
@@ -180,11 +221,13 @@ function showView(view) {
   $('#page-breadcrumb').textContent = view.charAt(0).toUpperCase() + view.slice(1);
   $('.sidebar').classList.remove('open');
   if (view === 'events') renderEvents();
+  if (view === 'videos') renderVideos();
   if (view === 'tickets') renderTickets();
   if (view === 'calendar') renderCalendar();
   if (view === 'students') renderStudents();
   if (view === 'attendance') renderAttendance();
   if (view === 'participants') renderParticipants();
+  if (view === 'media') { populateVideoEvents(); renderAdminVideos(); }
 }
 
 function renderAdminDashboard() {
@@ -352,8 +395,12 @@ $('#hero-action').addEventListener('click', () => showView('events'));
 $('#event-search').addEventListener('input', (event) => renderEvents($('.filter.active').dataset.filter, event.target.value));
 $$('.filter').forEach((button) => button.addEventListener('click', () => { $$('.filter').forEach((item) => item.classList.remove('active')); button.classList.add('active'); renderEvents(button.dataset.filter, $('#event-search').value); }));
 $('#create-event-form').addEventListener('submit', (event) => { event.preventDefault(); const name = $('#new-event-name').value; const dateTime = new Date($('#new-event-date').value); const date = Number.isNaN(dateTime.getTime()) ? 'NEW' : `${String(dateTime.getDate()).padStart(2, '0')} ${dateTime.toLocaleString('en-US', { month: 'short' }).toUpperCase()}`; const time = Number.isNaN(dateTime.getTime()) ? 'TBA' : dateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); events.unshift({ name, category: $('#new-event-category').value, date, time, location: $('#new-event-location').value, organizer: $('#new-event-organizer').value, capacity: Number($('#new-event-capacity').value), fee: 'Free', requirement: 'College ID required', description: $('#new-event-description').value || 'A new campus event is ready for registrations.', art: 'art-design' }); event.target.reset(); showToast(`${name} has been published`); showView('events'); });
+$('#create-video-form').addEventListener('submit', (event) => { event.preventDefault(); state.videos.unshift({ title: $('#new-video-title').value, event: $('#new-video-event').value, category: $('#new-video-category').value, url: $('#new-video-url').value, description: $('#new-video-description').value || 'A new CampusLoop video connected to this event.' }); localStorage.setItem('campusloop-videos', JSON.stringify(state.videos)); event.target.reset(); renderAdminVideos(); renderVideos(); showToast('Video published to the event hub'); });
+$('#video-search').addEventListener('input', (event) => renderVideos($('.video-filter-row .filter.active').dataset.videoFilter, event.target.value));
+$$('[data-video-filter]').forEach((button) => button.addEventListener('click', () => { $$('.video-filter-row .filter').forEach((item) => item.classList.remove('active')); button.classList.add('active'); renderVideos(button.dataset.videoFilter, $('#video-search').value); }));
 
 renderEvents();
 renderUpcoming();
 renderCalendar();
+renderVideos();
 setRole('student');

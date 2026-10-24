@@ -13,9 +13,11 @@ const starterVideos = [
   { title: 'Techxter 2026: build what matters', event: 'Techxter 2026', category: 'Highlight', url: 'https://www.youtube.com/watch?v=ysz5S6PUM-U', description: 'A quick look at the ideas, energy and teams behind our flagship hackathon.' },
   { title: 'Rang open mic: voices of campus', event: 'Rang — open mic night', category: 'Preview', url: 'https://www.youtube.com/watch?v=ScMzIvxBSi4', description: 'Meet the performers bringing an evening of music, poetry and stories to life.' }
 ];
-const state = { role: 'student', currentView: 'overview', calendarMonth: 8, calendarYear: 2026, tickets: JSON.parse(localStorage.getItem('campusloop-tickets') || '[]'), students: JSON.parse(localStorage.getItem('campusloop-students') || '[]'), attendance: JSON.parse(localStorage.getItem('campusloop-attendance') || '{}'), reminders: JSON.parse(localStorage.getItem('campusloop-reminders') || '{}'), videos: JSON.parse(localStorage.getItem('campusloop-videos') || 'null') || starterVideos };
+const state = { role: 'student', user: null, currentView: 'overview', calendarMonth: 8, calendarYear: 2026, tickets: JSON.parse(localStorage.getItem('campusloop-tickets') || '[]'), students: JSON.parse(localStorage.getItem('campusloop-students') || '[]'), attendance: JSON.parse(localStorage.getItem('campusloop-attendance') || '{}'), certificates: JSON.parse(localStorage.getItem('campusloop-certificates') || '[]'), accounts: JSON.parse(localStorage.getItem('campusloop-accounts') || '[]'), reminders: JSON.parse(localStorage.getItem('campusloop-reminders') || '{}'), videos: JSON.parse(localStorage.getItem('campusloop-videos') || 'null') || starterVideos };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+let authMode = 'login';
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 
 function showToast(message) {
   const toast = document.createElement('div');
@@ -27,24 +29,76 @@ function showToast(message) {
 
 function setRole(role) {
   state.role = role;
+  authMode = 'login';
   $$('.role-tab').forEach((tab) => {
     const active = tab.dataset.role === role;
     tab.classList.toggle('active', active);
     tab.setAttribute('aria-selected', active);
   });
   const isAdmin = role === 'admin';
-  $('#email').value = isAdmin ? 'admin@college.edu' : 'student@college.edu';
-  $('#password').value = isAdmin ? 'admin123' : 'campus123';
-  $('#login-label').textContent = isAdmin ? 'Enter admin console' : 'Enter student space';
-  $('#demo-hint').textContent = isAdmin ? 'Demo: admin@college.edu / admin123' : 'Demo: student@college.edu / campus123';
-  $('#signup-link').textContent = isAdmin ? 'Request admin access' : 'Create a student account';
+  $('#email').value = isAdmin ? '' : 'student@college.edu';
+  $('#password').value = '';
+  updateAuthMode();
+}
+
+function updateAuthMode() {
+  const isSignup = authMode === 'signup';
+  const isAdmin = state.role === 'admin';
+  const showAccountFields = isSignup;
+  $('#signup-fields').classList.toggle('hidden', !showAccountFields);
+  $('#signup-student-id-field').classList.toggle('hidden', !isSignup || isAdmin);
+  $('#signup-name').required = showAccountFields;
+  $('#signup-student-id').required = isSignup && !isAdmin;
+  $('#email').required = true;
+  $('#email').disabled = false;
+  $('#password').required = true;
+  $('#password').disabled = false;
+  $('#password-toggle').disabled = false;
+  $('#login-submit').disabled = false;
+  $('#forgot-link').classList.toggle('hidden', isAdmin);
+  $('#admin-auth-unavailable').classList.toggle('hidden', !isAdmin);
+  $('#password').autocomplete = isSignup ? 'new-password' : 'current-password';
+  $('#login-label').textContent = isSignup ? `Create ${isAdmin ? 'admin' : 'student'} account` : isAdmin ? 'Enter admin console' : 'Enter student space';
+  $('#signup-link').textContent = isSignup ? 'Back to sign in' : isAdmin ? 'Create an admin account' : 'Create a student account';
+  $('#signup-link').classList.remove('hidden');
+  $('#demo-hint').textContent = isSignup
+    ? isAdmin ? 'Demo only: this account and password are stored in this browser and do not secure admin access.' : 'Create a personal student account to track your participation.'
+    : isAdmin ? 'Demo only: admin accounts are stored in this browser and are not securely verified.' : 'Demo: student@college.edu / campus123';
 }
 
 function login(event) {
   event.preventDefault();
   const email = $('#email').value.trim();
   const isAdmin = state.role === 'admin';
-  const name = isAdmin ? 'Event Admin' : (email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()) || 'Aarav Shah');
+  const password = $('#password').value;
+  let account;
+  if (authMode === 'signup') {
+    if (state.accounts.some((item) => item.email.toLowerCase() === email.toLowerCase())) {
+      showToast('An account already exists for this email. Please sign in.');
+      return;
+    }
+    account = {
+      name: $('#signup-name').value.trim(),
+      studentId: isAdmin ? '' : $('#signup-student-id').value.trim(),
+      email,
+      password,
+      role: isAdmin ? 'admin' : 'student'
+    };
+    state.accounts.push(account);
+    localStorage.setItem('campusloop-accounts', JSON.stringify(state.accounts));
+    authMode = 'login';
+    showToast(`${isAdmin ? 'Admin' : 'Student'} account created in this browser. You can now sign in.`);
+    updateAuthMode();
+    $('#password').value = '';
+    return;
+  }
+  account = state.accounts.find((item) => item.role === state.role && item.email.toLowerCase() === email.toLowerCase() && item.password === password);
+  if (!account && email.toLowerCase() === 'student@college.edu' && password === 'campus123') {
+    account = { name: 'Aarav Shah', studentId: '22CS001', email, role: 'student' };
+  }
+  if (!account) { showToast(`No ${isAdmin ? 'admin' : 'student'} account matches those credentials`); return; }
+  state.user = account;
+  const name = account.name;
   $('#auth-screen').classList.add('hidden');
   $('#app-screen').classList.remove('hidden');
   $('#workspace-role').textContent = isAdmin ? 'Admin console' : 'Student space';
@@ -52,13 +106,20 @@ function login(event) {
   $('#profile-name').textContent = name;
   $('#profile-role').textContent = isAdmin ? 'Administrator' : 'Student';
   $('#profile-avatar').textContent = isAdmin ? 'EA' : name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
-  $('#welcome-title').innerHTML = isAdmin ? 'Welcome back, Admin <span>✦</span>' : `Good evening, ${name} <span>✦</span>`;
+  const welcomeTitle = $('#welcome-title');
+  welcomeTitle.replaceChildren(document.createTextNode(isAdmin ? 'Welcome back, Admin ' : `Good evening, ${name} `));
+  const welcomeAccent = document.createElement('span');
+  welcomeAccent.textContent = '✦';
+  welcomeTitle.append(welcomeAccent);
   $('#welcome-subtitle').textContent = isAdmin ? 'Your campus is moving. Here is what needs your attention.' : 'The best campus moments are waiting for you.';
   $$('.admin-only').forEach((item) => item.classList.toggle('hidden', !isAdmin));
   $('#top-create-button').classList.toggle('hidden', !isAdmin);
   $('#top-create-label').textContent = isAdmin ? 'Create event' : '';
+  $$('.student-only').forEach((item) => item.classList.toggle('hidden', isAdmin));
   if (isAdmin) { renderAdminDashboard(); renderAttendance(); renderParticipants(); }
   renderTickets();
+  renderStudentAttendance();
+  renderCertificates();
   renderUpcoming();
   renderVideos();
   showToast(`Signed in to your ${isAdmin ? 'admin' : 'student'} space`);
@@ -162,7 +223,7 @@ function renderUpcoming() {
 }
 
 function renderTickets() {
-  const tickets = state.tickets;
+  const tickets = state.role === 'student' ? state.tickets.filter((ticket) => ticket.email?.toLowerCase() === state.user?.email.toLowerCase()) : [];
   $('#ticket-count').textContent = tickets.length;
   $('#stat-tickets').textContent = String(tickets.length).padStart(2, '0');
   $('#tickets-empty').classList.toggle('hidden', tickets.length > 0);
@@ -197,9 +258,13 @@ function cancelTicket(code) {
 }
 
 function openTicketModal(eventName) {
+  if (state.role !== 'student' || !state.user) { showToast('Sign in with a student account to reserve a ticket'); return; }
   const event = events.find((item) => item.name === eventName) || events[0];
   const seatsLeft = Math.max(0, (event.capacity || 100) - state.tickets.filter((ticket) => ticket.event === event.name).length);
   $('#ticket-event-name').value = event.name;
+  $('#ticket-name').value = state.user.name;
+  $('#ticket-student-id').value = state.user.studentId || '';
+  $('#ticket-email').value = state.user.email;
   $('#modal-event-caption').textContent = `${event.date} at ${event.location} · ${seatsLeft} spots left · ${event.fee}`;
   $('#ticket-modal').classList.remove('hidden');
   $('#ticket-name').focus();
@@ -207,9 +272,14 @@ function openTicketModal(eventName) {
 
 function issueTicket(event) {
   event.preventDefault();
+  if (state.role !== 'student' || !state.user) { showToast('Sign in with a student account to reserve a ticket'); return; }
   const eventName = $('#ticket-event-name').value;
   const eventDetails = events.find((item) => item.name === eventName) || events[0];
-  const ticket = { event: eventName, category: eventDetails.category, location: eventDetails.location, date: eventDetails.date, time: eventDetails.time, code: `CEH-${String(events.indexOf(eventDetails) + 1).padStart(3, '0')}-${Math.random().toString(36).slice(2, 7).toUpperCase()}` };
+  if (state.tickets.some((item) => item.email?.toLowerCase() === state.user.email.toLowerCase() && item.event === eventName)) {
+    showToast('You already have a ticket for this event');
+    return;
+  }
+  const ticket = { name: state.user.name, studentId: state.user.studentId || '', email: state.user.email, event: eventName, category: eventDetails.category, location: eventDetails.location, date: eventDetails.date, time: eventDetails.time, code: `CEH-${String(events.indexOf(eventDetails) + 1).padStart(3, '0')}-${Math.random().toString(36).slice(2, 7).toUpperCase()}` };
   state.tickets.unshift(ticket);
   localStorage.setItem('campusloop-tickets', JSON.stringify(state.tickets));
   $('#ticket-modal').classList.add('hidden');
@@ -221,9 +291,10 @@ function issueTicket(event) {
 }
 
 function showView(view) {
-  if (view === 'registrations' || view === 'manage' || view === 'students' || view === 'attendance' || view === 'participants') {
+  if (view === 'registrations' || view === 'manage' || view === 'students' || view === 'attendance' || view === 'participants' || (view === 'certificates' && state.role === 'admin')) {
     if (state.role !== 'admin') { showToast('Admin access is required for this view'); return; }
   }
+  if (view === 'student-attendance' && state.role !== 'student') { showToast('Student access is required for this view'); return; }
   state.currentView = view;
   $$('.app-view').forEach((section) => section.classList.toggle('hidden', section.id !== `view-${view}`));
   $$('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view));
@@ -235,6 +306,8 @@ function showView(view) {
   if (view === 'calendar') renderCalendar();
   if (view === 'students') renderStudents();
   if (view === 'attendance') renderAttendance();
+  if (view === 'student-attendance') renderStudentAttendance();
+  if (view === 'certificates') renderCertificates();
   if (view === 'participants') renderParticipants();
   if (view === 'media') { populateVideoEvents(); renderAdminVideos(); }
 }
@@ -248,17 +321,8 @@ function renderAdminDashboard() {
   ].map(([student, event, code]) => `<tr><td><strong>${student}</strong></td><td>${event}</td><td>${code}</td><td class="status-confirmed">Confirmed</td></tr>`).join('');
 }
 
-const registrationSeed = [
-  { name: 'Vihaan Joshi', id: '23BT031', event: 'Blood Donation Camp', code: 'CEH-010-1Z1G' },
-  { name: 'Tara Bhatt', id: '22IT018', event: 'Placement Readiness Seminar', code: 'CEH-005-1MLC1' },
-  { name: 'Aditya Pillai', id: '24EC004', event: 'Robotics Line-Follower Challenge', code: 'CEH-006-10160' },
-  { name: 'Nisha Reddy', id: '21CS088', event: 'Techxter 2026', code: 'CEH-001-8D2QK' },
-  { name: 'Aarav Sharma', id: '22CS001', event: 'Robotics Line-Follower Challenge', code: 'CEH-006-1M2M2' },
-  { name: 'Diya Menon', id: '22CS014', event: 'Techxter 2026', code: 'CEH-001-2P7LQ' }
-];
-
 function eventRegistrations() {
-  return [...registrationSeed, ...state.tickets.map((ticket, index) => ({ name: $('#ticket-name')?.value || 'Campus participant', id: 'Guest', event: ticket.event, code: ticket.code || `CEH-GUEST-${index}` }))];
+  return state.tickets.map((ticket) => ({ name: ticket.name, id: ticket.studentId || 'Guest', email: ticket.email, event: ticket.event, code: ticket.code, ticket }));
 }
 
 function renderAttendance() {
@@ -272,16 +336,53 @@ function renderAttendance() {
   const filtered = registrations.filter((registration) => (select.value === 'all' || registration.event === select.value) && `${registration.name} ${registration.id} ${registration.event}`.toLowerCase().includes(search));
   const checked = filtered.filter((registration) => state.attendance[registration.code]).length;
   $('#attendance-total').textContent = `${checked} / ${filtered.length}`;
-  $('#attendance-body').innerHTML = filtered.map((registration) => { const isChecked = Boolean(state.attendance[registration.code]); return `<tr><td><strong>${registration.name}</strong><small class="table-subtext">${registration.event}</small></td><td>${registration.id}</td><td>${registration.code}</td><td><span class="attendance-status ${isChecked ? 'is-present' : ''}">${isChecked ? 'Present' : 'Not checked in'}</span></td><td><button class="table-action ${isChecked ? 'danger-button' : 'checkin-button'} attendance-toggle" data-code="${registration.code}">${isChecked ? 'Undo check-in' : 'Mark present'}</button></td></tr>`; }).join('');
+  $('#attendance-body').innerHTML = filtered.map((registration) => { const isChecked = Boolean(state.attendance[registration.code]); return `<tr><td><strong>${escapeHtml(registration.name)}</strong><small class="table-subtext">${escapeHtml(registration.event)}</small></td><td>${escapeHtml(registration.id)}</td><td>${escapeHtml(registration.code)}</td><td><span class="attendance-status ${isChecked ? 'is-present' : ''}">${isChecked ? 'Present' : 'Not checked in'}</span></td><td><button class="table-action ${isChecked ? 'danger-button' : 'checkin-button'} attendance-toggle" data-code="${escapeHtml(registration.code)}">${isChecked ? 'Undo check-in' : 'Mark present'}</button></td></tr>`; }).join('');
   $$('.attendance-toggle').forEach((button) => button.addEventListener('click', () => toggleAttendance(button.dataset.code)));
 }
 
 function toggleAttendance(code) {
+  if (state.role !== 'admin') { showToast('Only admins can update attendance'); return; }
+  if (!state.tickets.some((ticket) => ticket.code === code)) { showToast('Attendance can only be recorded for a valid event ticket'); return; }
   if (state.attendance[code]) delete state.attendance[code]; else state.attendance[code] = true;
   localStorage.setItem('campusloop-attendance', JSON.stringify(state.attendance));
   renderAttendance();
   renderParticipants();
   showToast(state.attendance[code] ? 'Participant marked present' : 'Check-in undone');
+  renderStudentAttendance();
+  renderCertificates();
+}
+
+function renderStudentAttendance() {
+  const tickets = state.tickets.filter((ticket) => ticket.email?.toLowerCase() === state.user?.email.toLowerCase());
+  const attended = tickets.filter((ticket) => state.attendance[ticket.code]).length;
+  $('#student-attendance-total').textContent = `${attended} / ${tickets.length}`;
+  $('#student-attendance-body').innerHTML = tickets.length ? tickets.map((ticket) => `<tr><td><strong>${escapeHtml(ticket.event)}</strong></td><td>${escapeHtml(ticket.code)}</td><td><span class="attendance-status ${state.attendance[ticket.code] ? 'is-present' : ''}">${state.attendance[ticket.code] ? 'Present' : 'Registered · not checked in'}</span></td></tr>`).join('') : '<tr><td colspan="3">No event registrations yet. Your attendance will appear here after you register.</td></tr>';
+}
+
+function renderCertificates() {
+  const content = $('#certificates-content');
+  if (state.role === 'admin') {
+    const eligible = state.tickets.filter((ticket) => state.attendance[ticket.code]);
+    content.innerHTML = eligible.length ? `<div class="certificate-admin-list">${eligible.map((ticket) => {
+      const issued = state.certificates.some((certificate) => certificate.ticketCode === ticket.code);
+      return `<article class="certificate-admin-row"><div><strong>${escapeHtml(ticket.name)}</strong><small>${escapeHtml(ticket.email)} · ${escapeHtml(ticket.event)}</small></div><span class="attendance-status is-present">Attendance verified</span><button class="small-button issue-certificate" data-code="${escapeHtml(ticket.code)}" ${issued ? 'disabled' : ''}>${issued ? 'Certificate issued' : 'Issue certificate'}</button></article>`;
+    }).join('')}</div>` : '<div class="empty-state"><div>✦</div><h2>No eligible participants yet</h2><p>Certificates become available after you mark a registered student present at an event.</p></div>';
+    $$('.issue-certificate').forEach((button) => button.addEventListener('click', () => issueCertificate(button.dataset.code)));
+    return;
+  }
+  const certificates = state.certificates.filter((certificate) => certificate.email.toLowerCase() === state.user?.email.toLowerCase());
+  content.innerHTML = certificates.length ? `<div class="certificate-grid">${certificates.map((certificate) => `<article class="certificate-card"><p class="eyebrow">CERTIFICATE OF PARTICIPATION</p><h2>Congratulations, ${escapeHtml(certificate.name)}!</h2><p>Thank you for being part of <strong>${escapeHtml(certificate.event)}</strong>. Your enthusiasm, contribution, and successful completion helped make this campus event special.</p><div class="certificate-signoff">With gratitude,<br><strong>CampusLoop Event Team</strong></div><small>Certificate ID · ${escapeHtml(certificate.id)}<br>Issued ${escapeHtml(new Date(certificate.issuedAt).toLocaleDateString())}</small></article>`).join('')}</div>` : '<div class="empty-state"><div>✦</div><h2>Your certificates will appear here</h2><p>Once you participate in an event and the admin verifies your attendance, your personal certificate will be posted here.</p></div>';
+}
+
+function issueCertificate(ticketCode) {
+  if (state.role !== 'admin') { showToast('Only admins can issue certificates'); return; }
+  const ticket = state.tickets.find((item) => item.code === ticketCode);
+  if (!ticket || !state.attendance[ticketCode]) { showToast('A verified event attendance is required'); return; }
+  if (state.certificates.some((certificate) => certificate.ticketCode === ticketCode)) { showToast('This participant already has a certificate'); return; }
+  state.certificates.push({ id: `CL-${Math.random().toString(36).slice(2, 8).toUpperCase()}`, ticketCode, name: ticket.name, email: ticket.email, event: ticket.event, issuedAt: new Date().toISOString() });
+  localStorage.setItem('campusloop-certificates', JSON.stringify(state.certificates));
+  renderCertificates();
+  showToast(`Certificate issued to ${ticket.name}`);
 }
 
 function renderParticipants() {
@@ -308,12 +409,59 @@ function renderStudents() {
     { name: 'Tara Bhatt', id: '22IT018', department: 'Information Technology', email: 'tara@college.edu' },
     { name: 'Aditya Pillai', id: '24EC004', department: 'Electronics', email: 'aditya@college.edu' }
   ];
-  const students = state.students.length ? state.students : seedStudents;
-  $('#students-body').innerHTML = students.map((student, index) => `<tr><td><strong>${student.name}</strong></td><td>${student.id}</td><td>${student.department}</td><td>${student.email}</td><td><button class="table-action danger-button delete-student" data-index="${index}">Delete</button></td></tr>`).join('');
-  $$('.delete-student').forEach((button) => button.addEventListener('click', () => deleteStudent(Number(button.dataset.index))));
+  const directory = state.students.length ? state.students : seedStudents;
+  const students = [...directory, ...state.accounts.filter((account) => account.role === 'student' && !directory.some((student) => student.email.toLowerCase() === account.email.toLowerCase())).map((account) => ({ name: account.name, id: account.studentId || '—', department: 'Student', email: account.email }))];
+  $('#students-body').innerHTML = students.map((student) => {
+    const registrations = state.tickets.filter((ticket) => ticket.email?.toLowerCase() === student.email.toLowerCase());
+    const attended = registrations.filter((ticket) => state.attendance[ticket.code]).length;
+    const hasAccount = state.accounts.some((account) => account.role === 'student' && account.email.toLowerCase() === student.email.toLowerCase());
+    const accountAction = hasAccount ? `<button class="table-action edit-student-account" data-email="${escapeHtml(student.email)}">Edit login</button>` : '<span class="table-subtext">No login account</span>';
+    return `<tr><td><strong>${escapeHtml(student.name)}</strong></td><td>${escapeHtml(student.id)}</td><td>${escapeHtml(student.department)}</td><td>${escapeHtml(student.email)}</td><td>${attended} / ${registrations.length} attended</td><td>${accountAction}<button class="table-action danger-button delete-student" data-email="${escapeHtml(student.email)}">Delete</button></td></tr>`;
+  }).join('');
+  $$('.delete-student').forEach((button) => button.addEventListener('click', () => deleteStudent(button.dataset.email)));
+  $$('.edit-student-account').forEach((button) => button.addEventListener('click', () => openStudentAccountEditor(button.dataset.email)));
 }
 
-function deleteStudent(index) {
+function openStudentAccountEditor(email) {
+  const account = state.accounts.find((item) => item.role === 'student' && item.email.toLowerCase() === email.toLowerCase());
+  if (!account) { showToast('This student does not have a login account'); return; }
+  $('#student-account-original-email').value = account.email;
+  $('#student-account-email').value = account.email;
+  $('#student-account-password').value = '';
+  $('#student-account-editor').classList.remove('hidden');
+  $('#student-account-email').focus();
+}
+
+function updateStudentAccount(event) {
+  event.preventDefault();
+  if (state.role !== 'admin') { showToast('Only admins can update student accounts'); return; }
+  const originalEmail = $('#student-account-original-email').value;
+  const account = state.accounts.find((item) => item.role === 'student' && item.email.toLowerCase() === originalEmail.toLowerCase());
+  if (!account) { showToast('Student account was not found'); closeModals(); return; }
+  const email = $('#student-account-email').value.trim();
+  const password = $('#student-account-password').value;
+  if (state.accounts.some((item) => item !== account && item.email.toLowerCase() === email.toLowerCase())) {
+    showToast('Another account already uses this email');
+    return;
+  }
+  const previousEmail = account.email;
+  account.email = email;
+  if (password) account.password = password;
+  state.tickets.forEach((ticket) => { if (ticket.email?.toLowerCase() === previousEmail.toLowerCase()) ticket.email = email; });
+  state.certificates.forEach((certificate) => { if (certificate.email.toLowerCase() === previousEmail.toLowerCase()) certificate.email = email; });
+  state.students.forEach((student) => { if (student.email.toLowerCase() === previousEmail.toLowerCase()) student.email = email; });
+  localStorage.setItem('campusloop-accounts', JSON.stringify(state.accounts));
+  localStorage.setItem('campusloop-tickets', JSON.stringify(state.tickets));
+  localStorage.setItem('campusloop-certificates', JSON.stringify(state.certificates));
+  localStorage.setItem('campusloop-students', JSON.stringify(state.students));
+  $('#student-account-form').reset();
+  closeModals();
+  renderStudents();
+  renderAdminDashboard();
+  showToast('Student login details updated');
+}
+
+function deleteStudent(email) {
   if (!window.confirm('Remove this student record?')) return;
   const seedStudents = [
     { name: 'Vihaan Joshi', id: '23BT031', department: 'Biotechnology', email: 'vihaan@college.edu' },
@@ -321,9 +469,10 @@ function deleteStudent(index) {
     { name: 'Aditya Pillai', id: '24EC004', department: 'Electronics', email: 'aditya@college.edu' }
   ];
   const students = state.students.length ? state.students : seedStudents;
-  students.splice(index, 1);
-  state.students = students;
-  localStorage.setItem('campusloop-students', JSON.stringify(students));
+  state.students = students.filter((student) => student.email.toLowerCase() !== email.toLowerCase());
+  state.accounts = state.accounts.filter((account) => account.email.toLowerCase() !== email.toLowerCase());
+  localStorage.setItem('campusloop-students', JSON.stringify(state.students));
+  localStorage.setItem('campusloop-accounts', JSON.stringify(state.accounts));
   renderStudents();
   showToast('Student record deleted');
 }
@@ -380,14 +529,20 @@ $$('.role-tab').forEach((button) => button.addEventListener('click', () => setRo
 $('#login-form').addEventListener('submit', login);
 $('#ticket-form').addEventListener('submit', issueTicket);
 $('#password-toggle').addEventListener('click', () => { const input = $('#password'); input.type = input.type === 'password' ? 'text' : 'password'; });
-$('#logout-button').addEventListener('click', () => { $('#app-screen').classList.add('hidden'); $('#auth-screen').classList.remove('hidden'); $('#chatbot').classList.add('hidden'); showToast('You have been signed out'); });
+$('#logout-button').addEventListener('click', () => { state.user = null; $('#app-screen').classList.add('hidden'); $('#auth-screen').classList.remove('hidden'); $('#chatbot').classList.add('hidden'); showToast('You have been signed out'); });
 $('#mobile-menu').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
 $('#notification-button').addEventListener('click', () => showToast('You are all caught up'));
 $('#forgot-link').addEventListener('click', (event) => { event.preventDefault(); showToast('Password reset instructions are on their way'); });
-$('#signup-link').addEventListener('click', (event) => { event.preventDefault(); showToast('Account creation will open soon'); });
+$('#signup-link').addEventListener('click', (event) => {
+  event.preventDefault();
+  authMode = authMode === 'signup' ? 'login' : 'signup';
+  updateAuthMode();
+  if (authMode === 'signup') $('#signup-name').focus();
+});
 $('#top-create-button').addEventListener('click', () => showView('manage'));
 $('#add-student-button').addEventListener('click', () => $('#student-modal').classList.remove('hidden'));
 $('#student-form').addEventListener('submit', addStudent);
+$('#student-account-form').addEventListener('submit', updateStudentAccount);
 $('#calendar-prev').addEventListener('click', () => { state.calendarMonth -= 1; if (state.calendarMonth < 0) { state.calendarMonth = 11; state.calendarYear -= 1; } renderCalendar(); });
 $('#calendar-next').addEventListener('click', () => { state.calendarMonth += 1; if (state.calendarMonth > 11) { state.calendarMonth = 0; state.calendarYear += 1; } renderCalendar(); });
 $('#chatbot-toggle').addEventListener('click', () => $('#chatbot').classList.toggle('hidden'));
